@@ -1,24 +1,34 @@
 <template>
   <div id="app">
     <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <TabUnit :width="width" :height="height" />
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import Vue from 'vue';
+import VueKonva from 'vue-konva'
+import TabUnit from './components/TabUnit.vue'
+
+Vue.use(VueKonva)
 
 export default {
   name: 'app',
   components: {
-    HelloWorld
+    TabUnit
+  },
+  data() {
+    return {
+      width: 400,
+      height: 150
+    }
   }
 }
 </script>
 
 <style>
 #app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  font-family: "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
