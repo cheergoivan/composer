@@ -1,12 +1,11 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
     <TabUnit :width="width" :height="height" />
   </div>
 </template>
 
 <script>
-import Vue from 'vue';
+import Vue from 'vue'
 import VueKonva from 'vue-konva'
 import TabUnit from './components/TabUnit.vue'
 
