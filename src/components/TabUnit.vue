@@ -1,10 +1,15 @@
 <template>
-  <v-stage :config="configStage" ref="stage">
+  <v-stage :config="configStage"
+           ref="stage">
     <v-layer>
       <v-line :config="configLeftVertialLine" />
       <template v-for="horizontalLine in configHorizontalLines">
-        <v-line :key="'v' + horizontalLine.id" :config="horizontalLine.config" />
-        <v-line :key="horizontalLine.id" :config="horizontalLine.virtualLineConfig" @mousemove="hoverHorizontalLine" @mouseleave="leaveHorizontalLine" />
+        <v-line :key="'v' + horizontalLine.id"
+                :config="horizontalLine.config" />
+        <v-line :key="horizontalLine.id"
+                :config="horizontalLine.virtualLineConfig"
+                @mousemove="hoverHorizontalLine"
+                @mouseleave="leaveHorizontalLine" />
       </template>
       <v-line :config="configRightVertialLine" />
     </v-layer>
@@ -20,7 +25,7 @@ export default {
     width: Number,
     height: Number,
   },
-  data() {
+  data () {
     return {
       padding: 100,
       strokeWidth: 5,
@@ -28,29 +33,29 @@ export default {
     }
   },
   computed: {
-    configStage() {
+    configStage () {
       return {
         width: this.width + this.padding * 2,
         height: this.height + this.padding * 2
       }
     },
-    gap() {
+    gap () {
       return this.height / 5
     },
-    origin() {
+    origin () {
       return {
         x: this.padding,
         y: this.padding
       }
     },
-    configLeftVertialLine() {
+    configLeftVertialLine () {
       return {
         points: [this.origin.x, this.origin.y, this.origin.x, this.origin.y + this.height],
         stroke: 'black',
         strokeWidth: this.strokeWidth,
       }
     },
-    configHorizontalLines() {
+    configHorizontalLines () {
       var lines = []
       for (let i = 0; i < 6; i++) {
         const x1 = this.origin.x - this.strokeWidth / 2
@@ -75,7 +80,7 @@ export default {
       }
       return lines
     },
-    configRightVertialLine() {
+    configRightVertialLine () {
       return {
         points: [this.origin.x + this.width, this.origin.y, this.origin.x + this.width, this.origin.y + this.height],
         stroke: 'black',
@@ -84,7 +89,7 @@ export default {
     }
   },
   methods: {
-    hoverHorizontalLine(horizontalLine) {
+    hoverHorizontalLine (horizontalLine) {
       const mousePos = this.getMousePos()
       const line = horizontalLine.getStage()
       this.selectedLine = parseInt(line.getAttr('name')) - 1
@@ -96,14 +101,14 @@ export default {
       layer.add(shadowRect)
       layer.draw()
     },
-    leaveHorizontalLine(horizontalLine) {
+    leaveHorizontalLine (horizontalLine) {
       const layer = horizontalLine.getStage().getLayer()
       layer.find('.shadow').each((node) => {
         node.remove()
       })
       layer.draw()
     },
-    createShadow(layer, x, y) {
+    createShadow (layer, x, y) {
       const length = this.gap
       const rect = new Konva.Rect({
         name: 'shadow',
@@ -124,7 +129,7 @@ export default {
       layer.add(rect)
       layer.draw()
     },
-    createTextX(x, y) {
+    createTextX (x, y) {
       return new Konva.Text({
         x: x,
         y: y,
@@ -133,7 +138,7 @@ export default {
         fill: 'black'
       })
     },
-    getMousePos() {
+    getMousePos () {
       return this.$refs.stage.getStage().getPointerPosition()
     }
   }
