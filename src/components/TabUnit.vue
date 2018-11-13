@@ -8,7 +8,7 @@
                 :config="horizontalLine.config" />
         <v-line :key="horizontalLine.id"
                 :config="horizontalLine.virtualLineConfig"
-                @mousemove="hoverHorizontalLine"
+                @mouseover="hoverHorizontalLine"
                 @mouseleave="leaveHorizontalLine" />
       </template>
       <v-line :config="configRightVertialLine" />
@@ -18,44 +18,59 @@
 
 <script>
 import Konva from 'konva'
+import _ from 'lodash'
 
 export default {
   name: 'TabUnit',
   props: {
     width: Number,
-    height: Number,
+    height: Number
   },
-  data () {
+  data() {
     return {
       padding: 100,
-      strokeWidth: 5,
+      strokeWidth: 10,
       selectedLine: -1
     }
   },
   computed: {
-    configStage () {
+    configStage() {
       return {
         width: this.width + this.padding * 2,
         height: this.height + this.padding * 2
       }
     },
-    gap () {
+    gap() {
       return this.height / 5
     },
-    origin () {
+    origin() {
       return {
         x: this.padding,
         y: this.padding
       }
     },
-    configLeftVertialLine () {
+    note() {
       return {
-        points: [this.origin.x, this.origin.y, this.origin.x, this.origin.y + this.height],
-        stroke: 'black',
-        strokeWidth: this.strokeWidth,
+        width: this.gap,
+        textSize: 24
       }
     },
-    configHorizontalLines () {
+    virtualLineStrokeWidth() {
+      return this.gap * 3 / 4
+    },
+    configLeftVertialLine() {
+      return {
+        points: [
+          this.origin.x,
+          this.origin.y,
+          this.origin.x,
+          this.origin.y + this.height
+        ],
+        stroke: 'black',
+        strokeWidth: this.strokeWidth
+      }
+    },
+    configHorizontalLines() {
       var lines = []
       for (let i = 0; i < 6; i++) {
         const x1 = this.origin.x - this.strokeWidth / 2
@@ -67,69 +82,91 @@ export default {
             name: (i + 1).toString(),
             points: [x1, y, x2, y],
             stroke: 'black',
-            strokeWidth: this.strokeWidth,
+            strokeWidth: this.strokeWidth
           },
           virtualLineConfig: {
             name: (i + 1).toString(),
             points: [x1, y, x2, y],
-            stroke: 'transparent',
-            strokeWidth: this.gap / 2
+            stroke: 'red',
+            strokeWidth: this.virtualLineStrokeWidth
           }
         }
         lines.push(line)
       }
       return lines
     },
-    configRightVertialLine () {
+    configRightVertialLine() {
       return {
-        points: [this.origin.x + this.width, this.origin.y, this.origin.x + this.width, this.origin.y + this.height],
+        points: [
+          this.origin.x + this.width,
+          this.origin.y,
+          this.origin.x + this.width,
+          this.origin.y + this.height
+        ],
         stroke: 'black',
         strokeWidth: this.strokeWidth
       }
     }
   },
   methods: {
-    hoverHorizontalLine (horizontalLine) {
+    hoverHorizontalLine(horizontalLine) {
+      console.log('mouse over')
       const mousePos = this.getMousePos()
       const line = horizontalLine.getStage()
       this.selectedLine = parseInt(line.getAttr('name')) - 1
       const layer = line.getLayer()
-      layer.find('.shadow').each((node) => {
-        node.remove()
-      })
-      const shadowRect = this.createShadow(mousePos.x, mousePos.y)
-      layer.add(shadowRect)
-      layer.draw()
+      const noteLocation = this.locateNote(line, mousePos.x)
+      const shadows = layer.find('.shadow')
+      if (_.isEmpty(shadows)) {
+        this.createShadow(layer, noteLocation.x, noteLocation.y)
+      } else {
+        shadows.each(node => {
+          node.remove()
+        })
+      }
     },
-    leaveHorizontalLine (horizontalLine) {
+    /**
+     * @param line the virtual line
+     * @param x the x coordinate of mouse
+     */
+    locateNote(line, x) {
+      const noteX =
+        ((x - this.padding) % this.note.width) * this.note.width + this.padding
+      const noteY = line.getAttr('points')[1] - this.virtualLineStrokeWidth / 2
+      return { x: noteX, y: noteY }
+    },
+    leaveHorizontalLine(horizontalLine) {
+       console.log('mouse leave')
       const layer = horizontalLine.getStage().getLayer()
-      layer.find('.shadow').each((node) => {
+      const shadows = layer.find('.shadow')
+      shadows.forEach(node => {
         node.remove()
       })
       layer.draw()
     },
-    createShadow (layer, x, y) {
-      const length = this.gap
+    createShadow(layer, x, y) {
       const rect = new Konva.Rect({
         name: 'shadow',
-        x: x - length / 2,
-        y: y - length / 2,
-        width: length,
-        height: length,
-        fill: 'red'
+        x: x,
+        y: y,
+        width: this.note.width,
+        height: this.note.width,
+        fill: 'black'
       })
+      /*
       var that = this
-      rect.on('mousedown', function () {
+      rect.on('mousedown', function() {
         const y = that.configHorizontalLines[that.selectedLine].config.points[1]
         const mousePos = that.getMousePos()
         const textX = that.createTextX(mousePos.x, y)
         layer.add(textX)
         layer.draw()
       })
+      */
       layer.add(rect)
       layer.draw()
     },
-    createTextX (x, y) {
+    createTextX(x, y) {
       return new Konva.Text({
         x: x,
         y: y,
@@ -138,7 +175,7 @@ export default {
         fill: 'black'
       })
     },
-    getMousePos () {
+    getMousePos() {
       return this.$refs.stage.getStage().getPointerPosition()
     }
   }

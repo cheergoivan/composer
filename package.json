@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "konva": "^2.5.0",
+    "lodash": "^4.17.11",
     "vue": "^2.5.17",
     "vue-konva": "^1.0.7"
   },
