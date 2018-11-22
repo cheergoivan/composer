@@ -8,8 +8,7 @@
                 :config="horizontalLine.config" />
         <v-line :key="horizontalLine.id"
                 :config="horizontalLine.virtualLineConfig"
-                @mouseover="hoverHorizontalLine"
-                @mouseleave="leaveHorizontalLine" />
+                @mousemove="hoverHorizontalLine" />
       </template>
       <v-line :config="configRightVertialLine" />
     </v-layer>
@@ -26,39 +25,39 @@ export default {
     width: Number,
     height: Number
   },
-  data() {
+  data () {
     return {
       padding: 100,
-      strokeWidth: 10,
-      selectedLine: -1
+      strokeWidth: 5,
+      occupied: []
     }
   },
   computed: {
-    configStage() {
+    configStage () {
       return {
         width: this.width + this.padding * 2,
         height: this.height + this.padding * 2
       }
     },
-    gap() {
+    gap () {
       return this.height / 5
     },
-    origin() {
+    origin () {
       return {
         x: this.padding,
         y: this.padding
       }
     },
-    note() {
+    note () {
       return {
         width: this.gap,
-        textSize: 24
+        textSize: this.gap * 3 / 4
       }
     },
-    virtualLineStrokeWidth() {
+    virtualLineStrokeWidth () {
       return this.gap * 3 / 4
     },
-    configLeftVertialLine() {
+    configLeftVertialLine () {
       return {
         points: [
           this.origin.x,
@@ -70,7 +69,7 @@ export default {
         strokeWidth: this.strokeWidth
       }
     },
-    configHorizontalLines() {
+    configHorizontalLines () {
       var lines = []
       for (let i = 0; i < 6; i++) {
         const x1 = this.origin.x - this.strokeWidth / 2
@@ -87,7 +86,7 @@ export default {
           virtualLineConfig: {
             name: (i + 1).toString(),
             points: [x1, y, x2, y],
-            stroke: 'red',
+            stroke: 'green',
             strokeWidth: this.virtualLineStrokeWidth
           }
         }
@@ -95,7 +94,7 @@ export default {
       }
       return lines
     },
-    configRightVertialLine() {
+    configRightVertialLine () {
       return {
         points: [
           this.origin.x + this.width,
@@ -109,74 +108,109 @@ export default {
     }
   },
   methods: {
-    hoverHorizontalLine(horizontalLine) {
-      console.log('mouse over')
+    hoverHorizontalLine (horizontalLine) {
       const mousePos = this.getMousePos()
       const line = horizontalLine.getStage()
-      this.selectedLine = parseInt(line.getAttr('name')) - 1
       const layer = line.getLayer()
       const noteLocation = this.locateNote(line, mousePos.x)
-      const shadows = layer.find('.shadow')
-      if (_.isEmpty(shadows)) {
-        this.createShadow(layer, noteLocation.x, noteLocation.y)
-      } else {
-        shadows.each(node => {
-          node.remove()
-        })
+      const shadows = layer.find('.noteContainer')
+      shadows.each(node => {
+        node.remove()
+        layer.draw()
+      })
+      if (_.findIndex(this.occupied, this.locateNoteText(noteLocation)) < 0) {
+        this.createNote(layer, noteLocation)
       }
     },
     /**
      * @param line the virtual line
      * @param x the x coordinate of mouse
      */
-    locateNote(line, x) {
+    locateNote (line, x) {
       const noteX =
-        ((x - this.padding) % this.note.width) * this.note.width + this.padding
-      const noteY = line.getAttr('points')[1] - this.virtualLineStrokeWidth / 2
+        (Math.floor((x - this.padding) / this.note.width)) * this.note.width + this.padding
+      const noteY = line.getAttr('points')[1] - this.note.width / 2
       return { x: noteX, y: noteY }
     },
-    leaveHorizontalLine(horizontalLine) {
-       console.log('mouse leave')
-      const layer = horizontalLine.getStage().getLayer()
-      const shadows = layer.find('.shadow')
-      shadows.forEach(node => {
-        node.remove()
-      })
-      layer.draw()
-    },
-    createShadow(layer, x, y) {
-      const rect = new Konva.Rect({
-        name: 'shadow',
-        x: x,
-        y: y,
+    createNote (layer, noteLocation) {
+      const note = new Konva.Rect({
+        name: 'noteContainer',
+        x: noteLocation.x,
+        y: noteLocation.y,
         width: this.note.width,
         height: this.note.width,
-        fill: 'black'
+        fill: 'red'
       })
-      /*
-      var that = this
-      rect.on('mousedown', function() {
-        const y = that.configHorizontalLines[that.selectedLine].config.points[1]
-        const mousePos = that.getMousePos()
-        const textX = that.createTextX(mousePos.x, y)
-        layer.add(textX)
-        layer.draw()
+      note.on('mousedown', () => {
+        this.createNoteText(layer, note)
       })
-      */
-      layer.add(rect)
+      layer.add(note)
       layer.draw()
     },
-    createTextX(x, y) {
-      return new Konva.Text({
-        x: x,
-        y: y,
-        fontSize: 24,
+    locateNoteText (noteLocation) {
+      return { x: noteLocation.x + this.note.width / 2 - this.note.textSize / 3, y: noteLocation.y + this.note.width / 2 - this.note.textSize / 2 }
+    },
+    createNoteText (layer, note) {
+      const noteLocation = {
+        x: note.getAttr('x'),
+        y: note.getAttr('y')
+      }
+      const noteTextLocation = this.locateNoteText(noteLocation)
+      this.occupied.push(noteTextLocation)
+      var textNode = new Konva.Text({
+        name: 'note',
+        x: noteTextLocation.x,
+        y: noteTextLocation.y,
+        fontSize: this.note.textSize,
         text: 'X',
+        fontStyle: 'bold',
         fill: 'black'
       })
+      layer.add(textNode)
+      layer.draw()
+      textNode.on('click', () => {
+        const textarea = this.createTextarea(note, textNode)
+        textarea.addEventListener('keydown', function (e) {
+          if (e.keyCode === 13) {
+            textNode.text(textarea.value.toUpperCase())
+            note.remove()
+            layer.draw()
+            document.body.removeChild(textarea)
+          }
+        })
+      })
     },
-    getMousePos() {
-      return this.$refs.stage.getStage().getPointerPosition()
+    createTextarea: function (note, textNode) {
+      var noteAbsPosition = note.getAbsolutePosition()
+      var stageBox = this.getStage().getContainer().getBoundingClientRect()
+      var textareaPosition = {
+        x: noteAbsPosition.x + stageBox.left,
+        y: noteAbsPosition.y + stageBox.top
+      }
+      var textarea = document.createElement('input')
+      document.body.appendChild(textarea)
+      textarea.value = textNode.text()
+      textarea.style.position = 'absolute'
+      textarea.style.top = textareaPosition.y + 'px'
+      textarea.style.left = textareaPosition.x + 'px'
+      const border = 2, padding = 0, margin = 0
+      textarea.style.width = note.width() - 2 * (border + padding + margin) + 'px'
+      textarea.style.height = note.width() - 2 + 'px'
+      textarea.style.fontSize = textNode.width() + 'px'
+      textarea.style.fontSize = this.note.textSize + 'px'
+      textarea.style.borderWidth = border + 'px'
+      textarea.style.padding = padding + 'px'
+      textarea.style.margin = margin + 'px'
+      textarea.style.textAlign = 'center'
+      textarea.style.textTransform = 'uppercase'
+      textarea.focus()
+      return textarea
+    },
+    getStage () {
+      return this.$refs.stage.getStage()
+    },
+    getMousePos () {
+      return this.getStage().getPointerPosition()
     }
   }
 }

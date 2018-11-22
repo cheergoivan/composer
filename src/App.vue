@@ -1,6 +1,7 @@
 <template>
   <div id="app">
-    <TabUnit :width="width" :height="height" />
+    <TabUnit :width="width"
+             :height="height" />
   </div>
 </template>
 
@@ -16,10 +17,10 @@ export default {
   components: {
     TabUnit
   },
-  data() {
+  data () {
     return {
       width: 400,
-      height: 150
+      height: 200
     }
   }
 }
@@ -27,7 +28,7 @@ export default {
 
 <style>
 #app {
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
