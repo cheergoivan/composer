@@ -86,7 +86,7 @@ export default {
           virtualLineConfig: {
             name: (i + 1).toString(),
             points: [x1, y, x2, y],
-            stroke: 'green',
+            stroke: 'transparent',
             strokeWidth: this.virtualLineStrokeWidth
           }
         }
