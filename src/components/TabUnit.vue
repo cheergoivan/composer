@@ -113,13 +113,9 @@ export default {
       const line = horizontalLine.getStage()
       const layer = line.getLayer()
       const noteLocation = this.locateNote(line, mousePos.x)
-      const shadows = layer.find('.noteContainer')
-      shadows.each(node => {
-        node.remove()
-        layer.draw()
-      })
-      if (_.findIndex(this.occupied, this.locateNoteText(noteLocation)) < 0) {
-        this.createNote(layer, noteLocation)
+      this.removePromptNote(layer)
+      if (_.findIndex(this.occupied, noteLocation) < 0) {
+        this.createPromptNote(layer, noteLocation)
       }
     },
     /**
@@ -132,55 +128,106 @@ export default {
       const noteY = line.getAttr('points')[1] - this.note.width / 2
       return { x: noteX, y: noteY }
     },
-    createNote (layer, noteLocation) {
-      const note = new Konva.Rect({
-        name: 'noteContainer',
+    createNoteContainer (layer, noteLocation, name) {
+      const noteContainer = new Konva.Rect({
+        name: name,
         x: noteLocation.x,
         y: noteLocation.y,
         width: this.note.width,
         height: this.note.width,
         fill: 'red'
       })
-      note.on('mousedown', () => {
-        this.createNoteText(layer, note)
-      })
-      layer.add(note)
-      layer.draw()
+      layer.add(noteContainer)
+      return noteContainer
     },
-    locateNoteText (noteLocation) {
-      return { x: noteLocation.x + this.note.width / 2 - this.note.textSize / 3, y: noteLocation.y + this.note.width / 2 - this.note.textSize / 2 }
+    createPromptNoteContainer (layer, noteLocation) {
+      this.createNoteContainer(layer, noteLocation, 'promptNoteContainer')
+
     },
-    createNoteText (layer, note) {
-      const noteLocation = {
-        x: note.getAttr('x'),
-        y: note.getAttr('y')
-      }
-      const noteTextLocation = this.locateNoteText(noteLocation)
-      this.occupied.push(noteTextLocation)
-      var textNode = new Konva.Text({
-        name: 'note',
-        x: noteTextLocation.x,
-        y: noteTextLocation.y,
+    createPersistNoteContainer (layer, noteLocation) {
+      this.createNoteContainer(layer, noteLocation, 'noteContainer')
+    },
+    createNoteText (layer, noteLocation, name) {
+      const noteText = new Konva.Text({
+        name: name,
+        x: noteLocation.x,
+        y: noteLocation.y,
+        width: this.note.width,
+        height: this.note.width,
+        align: 'center',
+        verticalAlign: 'middle',
         fontSize: this.note.textSize,
         text: 'X',
         fontStyle: 'bold',
         fill: 'black'
       })
-      layer.add(textNode)
-      layer.draw()
-      textNode.on('click', () => {
-        const textarea = this.createTextarea(note, textNode)
+      layer.add(noteText)
+      return noteText
+    },
+    createPromptNoteText (layer, noteLocation) {
+      const noteText = this.createNoteText(layer, noteLocation, 'promptNote')
+      noteText.on('click', () => {
+        this.removePromptNote(layer)
+        this.createPersistNote(layer, noteLocation)
+        this.occupied.push(noteLocation)
+      })
+      noteText.on('mouseout', () => {
+        this.removePromptNote(layer)
+      })
+    },
+    createPersistNoteText (layer, noteLocation) {
+      const noteText = this.createNoteText(layer, noteLocation, 'note')
+      var clickTimer = null
+      noteText.on('dblclick', () => {
+        clearTimeout(clickTimer)
+        const textarea = this.createTextarea(noteText)
         textarea.addEventListener('keydown', function (e) {
           if (e.keyCode === 13) {
-            textNode.text(textarea.value.toUpperCase())
-            note.remove()
+            noteText.text(textarea.value.toUpperCase())
             layer.draw()
             document.body.removeChild(textarea)
           }
         })
       })
+      noteText.on('click', () => {
+        clearTimeout(clickTimer)
+        clickTimer = setTimeout(() => {
+          noteText.remove()
+          layer.draw()
+          _.remove(this.occupied, n => {
+            return _.eq(n, noteLocation)
+          })
+        }, 200)
+      })
     },
-    createTextarea: function (note, textNode) {
+    createPersistNote (layer, noteLocation) {
+      //this.createPersistNoteContainer(layer, noteLocation)
+      this.createPersistNoteText(layer, noteLocation)
+      layer.draw()
+    },
+    createPromptNote (layer, noteLocation) {
+      //this.createPromptNoteContainer(layer, noteLocation)
+      this.createPromptNoteText(layer, noteLocation)
+      layer.draw()
+    },
+    removePromptNote (layer) {
+      this.removeNote(layer, 'promptNote')
+    },
+    removePersistNote (layer) {
+      this.removeNote(layer, 'note')
+    },
+    removeNote (layer, name) {
+      const noteContainers = layer.find('.' + name + 'Container')
+      noteContainers.each(node => {
+        node.remove()
+      })
+      const notes = layer.find('.' + name)
+      notes.each(node => {
+        node.remove()
+      })
+      layer.draw()
+    },
+    createTextarea: function (note) {
       var noteAbsPosition = note.getAbsolutePosition()
       var stageBox = this.getStage().getContainer().getBoundingClientRect()
       var textareaPosition = {
@@ -189,14 +236,13 @@ export default {
       }
       var textarea = document.createElement('input')
       document.body.appendChild(textarea)
-      textarea.value = textNode.text()
+      textarea.value = note.text()
       textarea.style.position = 'absolute'
       textarea.style.top = textareaPosition.y + 'px'
       textarea.style.left = textareaPosition.x + 'px'
       const border = 2, padding = 0, margin = 0
       textarea.style.width = note.width() - 2 * (border + padding + margin) + 'px'
-      textarea.style.height = note.width() - 2 + 'px'
-      textarea.style.fontSize = textNode.width() + 'px'
+      textarea.style.height = note.height() - 2 * (border + padding + margin) + 'px'
       textarea.style.fontSize = this.note.textSize + 'px'
       textarea.style.borderWidth = border + 'px'
       textarea.style.padding = padding + 'px'
