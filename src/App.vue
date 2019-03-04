@@ -1,19 +1,30 @@
 <template>
-  <div id="app">
-    <TabUnit :width="width"
-             :height="height" />
-  </div>
+  <v-app>
+    <v-toolbar app>
+      <v-toolbar-title class="headline text-uppercase">
+        <span>Vuetify</span>
+        <span class="font-weight-light">MATERIAL DESIGN</span>
+      </v-toolbar-title>
+      <v-spacer></v-spacer>
+      <v-btn flat
+             href="https://github.com/vuetifyjs/vuetify/releases/latest"
+             target="_blank">
+        <span class="mr-2">Latest Release</span>
+      </v-btn>
+    </v-toolbar>
+
+    <v-content>
+      <tab-unit :width="width"
+                :height="height"></tab-unit>
+    </v-content>
+  </v-app>
 </template>
 
 <script>
-import Vue from 'vue'
-import VueKonva from 'vue-konva'
-import TabUnit from './components/TabUnit.vue'
-
-Vue.use(VueKonva)
+import TabUnit from './components/TabUnit'
 
 export default {
-  name: 'app',
+  name: 'App',
   components: {
     TabUnit
   },
@@ -28,7 +39,7 @@ export default {
 
 <style>
 #app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  font-family: "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;

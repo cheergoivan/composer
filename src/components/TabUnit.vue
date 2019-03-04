@@ -147,7 +147,7 @@ export default {
     createPersistNoteContainer (layer, noteLocation) {
       this.createNoteContainer(layer, noteLocation, 'noteContainer')
     },
-    createNoteText (layer, noteLocation, name) {
+    createNoteText (layer, noteLocation, name, text) {
       const noteText = new Konva.Text({
         name: name,
         x: noteLocation.x,
@@ -157,7 +157,7 @@ export default {
         align: 'center',
         verticalAlign: 'middle',
         fontSize: this.note.textSize,
-        text: 'X',
+        text: text,
         fontStyle: 'bold',
         fill: 'black'
       })
@@ -165,27 +165,30 @@ export default {
       return noteText
     },
     createPromptNoteText (layer, noteLocation) {
-      const noteText = this.createNoteText(layer, noteLocation, 'promptNote')
+      const noteText = this.createNoteText(layer, noteLocation, 'promptNote', 'X')
       noteText.on('click', () => {
         this.removePromptNote(layer)
-        this.createPersistNote(layer, noteLocation)
-        this.occupied.push(noteLocation)
+        this.createPersistNote(layer, noteLocation, 'X')
       })
       noteText.on('mouseout', () => {
         this.removePromptNote(layer)
       })
     },
-    createPersistNoteText (layer, noteLocation) {
-      const noteText = this.createNoteText(layer, noteLocation, 'note')
+    createPersistNoteText (layer, noteLocation, text) {
+      const noteText = this.createNoteText(layer, noteLocation, 'note', text)
       var clickTimer = null
       noteText.on('dblclick', () => {
-        clearTimeout(clickTimer)
+        //clearTimeout(clickTimer)
         const textarea = this.createTextarea(noteText)
+        const that = this
         textarea.addEventListener('keydown', function (e) {
           if (e.keyCode === 13) {
-            noteText.text(textarea.value.toUpperCase())
-            layer.draw()
+            //noteText.text(textarea.value.toUpperCase())
+            //layer.draw()
             document.body.removeChild(textarea)
+            if (textarea.value) {
+              that.createPersistNote(layer, noteLocation, textarea.value.toUpperCase())
+            }
           }
         })
       })
@@ -200,10 +203,11 @@ export default {
         }, 200)
       })
     },
-    createPersistNote (layer, noteLocation) {
+    createPersistNote (layer, noteLocation, text) {
       //this.createPersistNoteContainer(layer, noteLocation)
-      this.createPersistNoteText(layer, noteLocation)
+      this.createPersistNoteText(layer, noteLocation, text)
       layer.draw()
+      this.occupied.push(noteLocation)
     },
     createPromptNote (layer, noteLocation) {
       //this.createPromptNoteContainer(layer, noteLocation)
@@ -236,13 +240,15 @@ export default {
       }
       var textarea = document.createElement('input')
       document.body.appendChild(textarea)
-      textarea.value = note.text()
+      //textarea.value = note.text()
       textarea.style.position = 'absolute'
       textarea.style.top = textareaPosition.y + 'px'
       textarea.style.left = textareaPosition.x + 'px'
       const border = 2, padding = 0, margin = 0
       textarea.style.width = note.width() - 2 * (border + padding + margin) + 'px'
       textarea.style.height = note.height() - 2 * (border + padding + margin) + 'px'
+      textarea.style.fontFamily = 'sans-serif'
+      textarea.style.fontWeight = 600
       textarea.style.fontSize = this.note.textSize + 'px'
       textarea.style.borderWidth = border + 'px'
       textarea.style.padding = padding + 'px'
